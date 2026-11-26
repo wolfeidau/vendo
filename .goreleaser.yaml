@@ -1,10 +1,7 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
 project_name: vendo
-
-before:
-  hooks:
-    - go mod tidy
 
 builds:
   - id: vendo
@@ -12,6 +9,8 @@ builds:
     binary: vendo
     env:
       - CGO_ENABLED=0
+    flags:
+      - -trimpath
     goos:
       - darwin
       - linux
@@ -19,28 +18,19 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.ShortCommit}}
-      - -X main.date={{.Date}}
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
 archives:
-  - formats:
-      - tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - formats: [tar.gz]
+    # No version in the name, so install.sh can use releases/latest/download.
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 
+# One .sha256 per archive and SBOM for slsa-attest and github-immutable-release.
 checksum:
-  name_template: checksums.txt
+  split: true
 
-release:
-  github:
-    owner: wolfeidau
-    name: vendo
+sboms:
+  - artifacts: archive
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
+  disable: true

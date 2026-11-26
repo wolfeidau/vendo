@@ -1,0 +1,61 @@
+# Release pipeline: a separate Buildkite pipeline that builds only v* tags, so its OIDC identity
+# (https://buildkite.com/wolfeidauci/vendo-release) signs release provenance and nothing else.
+steps:
+  # Pure Go (CGO_ENABLED=0) cross-compiles all four targets on a single runner.
+  - label: ":goreleaser: release build"
+    key: release_build
+    agents:
+      queue: linux-small
+    retry: &release_retry
+      automatic:
+        # mise-cache exits 75 when GitHub downloads fail.
+        - exit_status: 75
+          limit: 2
+    plugins:
+      - ./.buildkite/plugins/mise-cache: ~
+      - ./.buildkite/plugins/go-cache:
+          name: go_build
+      # v0.2.0, pinned by commit.
+      - https://github.com/wolfeidau/buildkite-release-plugins.git/goreleaser-build#582d0bdabdb1f689f5e4b98626d6d47171eb7cf0:
+          artifacts:
+            - "dist/vendo_*.tar.gz*"
+
+  # Signs keyless SLSA v1 provenance via Buildkite OIDC; does not fetch the GitHub token.
+  - label: ":lock: attest provenance"
+    key: slsa_attest
+    depends_on: release_build
+    agents:
+      queue: linux-small
+    retry: *release_retry
+    plugins:
+      - ./.buildkite/plugins/mise-cache: ~
+      # v0.2.0, pinned by commit.
+      - https://github.com/wolfeidau/buildkite-release-plugins.git/slsa-attest#582d0bdabdb1f689f5e4b98626d6d47171eb7cf0:
+          repo: wolfeidau/vendo
+          project: vendo
+          targets:
+            - darwin_amd64
+            - darwin_arm64
+            - linux_amd64
+            - linux_arm64
+
+  # Creates the GitHub release with every asset in one shot, so it is complete before becoming immutable.
+  - label: ":github: publish release"
+    key: publish_release
+    depends_on:
+      - slsa_attest
+    agents:
+      queue: linux-small
+    retry: *release_retry
+    plugins:
+      - ./.buildkite/plugins/mise-cache: ~
+      # v0.2.0, pinned by commit.
+      - https://github.com/wolfeidau/buildkite-release-plugins.git/github-immutable-release#582d0bdabdb1f689f5e4b98626d6d47171eb7cf0:
+          repo: wolfeidau/vendo
+          project: vendo
+          targets:
+            - darwin_amd64
+            - darwin_arm64
+            - linux_amd64
+            - linux_arm64
+          github-token-secret: VENDO_GITHUB_TOKEN
