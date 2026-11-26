@@ -1,0 +1,31 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - depguard
+    - errorlint
+    - forbidigo
+    - misspell
+    - unconvert
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: github.com/stretchr/testify/assert
+              desc: use github.com/stretchr/testify/require instead of assert
+    forbidigo:
+      forbid:
+        - pattern: 'slog\.Default\(\)'
+          msg: pass *slog.Logger explicitly via Globals.Logger instead of calling slog.Default()
+  exclusions:
+    rules:
+      - path-except: "^internal/"
+        linters:
+          - forbidigo
+
+formatters:
+  enable:
+    - gofmt

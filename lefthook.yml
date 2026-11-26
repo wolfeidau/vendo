@@ -1,0 +1,7 @@
+pre-commit:
+  parallel: true
+  commands:
+    tidy:
+      run: mise run check:tidy
+    lint:
+      run: mise run check:lint

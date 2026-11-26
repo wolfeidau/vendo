@@ -1,0 +1,14 @@
+# Build outputs
+/vendo
+dist/
+
+# Coverage files
+*.out
+*.coverprofile
+coverage.*
+
+# Private keys
+*.pem
+
+# OS files
+.DS_Store

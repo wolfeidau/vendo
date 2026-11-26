@@ -1,0 +1,16 @@
+[settings]
+experimental = true
+lockfile = true
+
+[tools]
+go = "1.27.4"
+golangci-lint = "2.15.0"
+goreleaser = "2.20.2"
+lefthook = "2.2.2"
+"go:golang.org/x/tools/gopls" = "0.24.0"
+
+[tasks."check:tidy"]
+run = "go mod tidy -diff"
+
+[tasks."check:lint"]
+run = "golangci-lint run --timeout 3m"
