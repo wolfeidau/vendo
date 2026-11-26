@@ -1,0 +1,38 @@
+steps:
+  - group: ":mag: QA"
+    key: quality_checks
+    steps:
+      - label: ":golangci-lint: lint"
+        retry:
+          automatic:
+            # mise-cache exits 75 when GitHub downloads fail.
+            - exit_status: 75
+              limit: 2
+        commands:
+          - mise run check:tidy
+          - golangci-lint run --verbose --timeout 3m
+        plugins:
+          - ./.buildkite/plugins/mise-cache: ~
+          - ./.buildkite/plugins/go-cache:
+              name: go_lint
+
+      - label: ":go: test"
+        retry:
+          automatic:
+            - exit_status: 75
+              limit: 2
+        artifact_paths:
+          - coverage.out
+          - tests.json
+        command: go test -race -count=1 -json -coverprofile=coverage.out -coverpkg=./... ./... > tests.json
+        env:
+          # The tests' go build inherits -race, so it reuses go test's packages and the real binary is checked too.
+          GOFLAGS: -race
+          # Each real-binary run would otherwise sleep 1s at exit.
+          GORACE: atexit_sleep_ms=0
+        plugins:
+          - ./.buildkite/plugins/mise-cache: ~
+          - wolfeidau/go-test-annotate#v1.0.0:
+              file: tests.json
+          - ./.buildkite/plugins/go-cache:
+              name: go_test
