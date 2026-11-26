@@ -1,0 +1,28 @@
+caches:
+  - name: go_test
+    cache_key:
+      - vendo-go-test-v1
+      - { agent: os }
+      - { agent: arch }
+      - { env: GO_CACHE_VERSION, fallback_limit: true }
+      - { checksum: [go.mod, go.sum, "**/*.go"] }
+    target_paths:
+      - ~/.cache/vendo-go
+  - name: go_lint
+    cache_key:
+      - vendo-go-lint-v1
+      - { agent: os }
+      - { agent: arch }
+      - { env: GO_CACHE_VERSION, fallback_limit: true }
+      - { checksum: [go.mod, go.sum, "**/*.go"] }
+    target_paths:
+      - ~/.cache/vendo-go
+  - name: mise
+    cache_key:
+      - vendo-mise-v1
+      - { agent: os }
+      - { agent: arch }
+      - { env: MISE_VERSION }
+      - { checksum: [mise.toml, mise.lock, ".buildkite/plugins/mise-cache/hooks/*"] }
+    target_paths:
+      - ~/.cache/vendo-mise

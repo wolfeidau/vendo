@@ -2,10 +2,11 @@
 /vendo
 dist/
 
-# Coverage files
+# Coverage and test output files
 *.out
 *.coverprofile
 coverage.*
+tests.json
 
 # Private keys
 *.pem
