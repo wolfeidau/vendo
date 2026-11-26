@@ -17,6 +17,15 @@ caches:
       - { checksum: [go.mod, go.sum, "**/*.go"] }
     target_paths:
       - ~/.cache/vendo-go
+  - name: go_build
+    cache_key:
+      - vendo-go-build-v1
+      - { agent: os }
+      - { agent: arch }
+      - { env: GO_CACHE_VERSION, fallback_limit: true }
+      - { checksum: [go.mod, go.sum, "**/*.go"] }
+    target_paths:
+      - ~/.cache/vendo-go
   - name: mise
     cache_key:
       - vendo-mise-v1

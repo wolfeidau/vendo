@@ -10,7 +10,7 @@ steps:
               limit: 2
         commands:
           - mise run check:tidy
-          - golangci-lint run --verbose --timeout 3m
+          - mise run check:lint
         plugins:
           - ./.buildkite/plugins/mise-cache: ~
           - ./.buildkite/plugins/go-cache:
@@ -32,7 +32,25 @@ steps:
           GORACE: atexit_sleep_ms=0
         plugins:
           - ./.buildkite/plugins/mise-cache: ~
-          - wolfeidau/go-test-annotate#v1.0.0:
+          # v1.0.0, pinned by commit.
+          - wolfeidau/go-test-annotate#4064140be6eb80883def24bfdbf079c2fe0b34a2:
               file: tests.json
+              tparse-version: v0.18.0
           - ./.buildkite/plugins/go-cache:
               name: go_test
+
+  - group: ":package: build"
+    key: build
+    steps:
+      - label: ":goreleaser: snapshot"
+        agents:
+          queue: linux-small
+        retry:
+          automatic:
+            - exit_status: 75
+              limit: 2
+        command: goreleaser release --snapshot --clean
+        plugins:
+          - ./.buildkite/plugins/mise-cache: ~
+          - ./.buildkite/plugins/go-cache:
+              name: go_build

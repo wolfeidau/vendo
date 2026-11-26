@@ -45,9 +45,21 @@ Control access to `op` based on how the agent runs:
 
 ## Installation
 
-Prerequisites: Go 1.27+ and, when using `--key-ref`, the 1Password CLI (`op`) on `PATH`.
+Prerequisites: when using `--key-ref`, the 1Password CLI (`op`) must be on `PATH`.
 
-Install a tagged release with `go install` (replace `<version>` with a release tag such as `v0.1.0`, or use `@latest` for the newest release):
+Install a prebuilt release binary (macOS arm64/amd64, Linux amd64/arm64) using [install.sh](install.sh). The installer always checks the archive's SHA-256 checksum, verifies the immutable GitHub Release attestation when `gh` is available, and verifies the keyless SLSA v1 provenance bundle when `cosign` is available:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/wolfeidau/vendo/main/install.sh | sh
+```
+
+Pin a specific release or install prefix:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/wolfeidau/vendo/main/install.sh | sh -s -- --version v0.1.0 --prefix ~/.local
+```
+
+Or install a tagged release with Go 1.27+:
 
 ```sh
 go install github.com/wolfeidau/vendo/cmd/vendo@<version>
@@ -59,6 +71,28 @@ Or build from source:
 git clone https://github.com/wolfeidau/vendo.git
 cd vendo
 go build -o vendo ./cmd/vendo
+```
+
+### Verifying releases
+
+Each release publishes archives (`vendo_<os>_<arch>.tar.gz`), per-file SHA-256 checksums (`.sha256`), SPDX JSON SBOMs (`.sbom.json` and `.sbom.json.sha256`), and keyless Sigstore SLSA v1 provenance bundles (`.sigstore.json`) signed by the tag-only Buildkite release pipeline (`https://buildkite.com/wolfeidauci/vendo-release`).
+
+Manual verification for a downloaded release asset:
+
+```sh
+# 1. Verify SHA-256 checksum (use shasum -a 256 on macOS)
+diff -u <(sha256sum vendo_linux_amd64.tar.gz | cut -d' ' -f1) vendo_linux_amd64.tar.gz.sha256
+
+# 2. Verify immutable GitHub Release asset attestation
+gh release verify-asset v0.1.0 vendo_linux_amd64.tar.gz --repo wolfeidau/vendo
+
+# 3. Verify keyless SLSA v1 build provenance via Sigstore/Cosign
+cosign verify-blob-attestation \
+  --bundle vendo_linux_amd64.tar.gz.sigstore.json \
+  --type slsaprovenance1 \
+  --certificate-oidc-issuer https://agent.buildkite.com \
+  --certificate-identity https://buildkite.com/wolfeidauci/vendo-release \
+  vendo_linux_amd64.tar.gz
 ```
 
 ## Quickstart
